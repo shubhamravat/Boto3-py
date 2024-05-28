@@ -1,12 +1,22 @@
 import boto3
 import csv
 import re
+from botocore.exceptions import ClientError
+from botocore.client import Config
+from datetime import datetime, timedelta
+import pytz
 
 
 
 aws_access_key_id='AKIA5V2RJ4PK6T3E5YXA'
 
 aws_secret_access_key='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'
+
+
+aws_access_key_id='AKIA5V2RJ4PK6T3E5YXA'
+
+aws_secret_access_key='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'
+
 
 instance_dict={}
 instance_dict_name={}
@@ -23,11 +33,7 @@ sqs_name_list=[]
 
 
 # Create a session using the exported credentials
-aws_mag_con = boto3.session.Session(
-    aws_access_key_id=aws_access_key_id,
-    aws_secret_access_key=aws_secret_access_key,
-   #aws_session_token=aws_session_token
-)
+aws_mag_con = boto3.session.Session(region_name='ap-south-1')
 
 
 aws_cli_ec2=aws_mag_con.client('ec2')
@@ -43,7 +49,47 @@ aws_cli_asg=aws_mag_con.client('autoscaling')
 aws_cli_redshift=aws_mag_con.client('redshift')
 aws_cli_kafka=aws_mag_con.client('kafka')
 aws_cli_sqs=aws_mag_con.client('sqs')
+today = datetime.now()# Calculate one day before todayone_day_ago = today - timedelta(days=2)
 
+target_date_report = today - timedelta(days=1)
+
+date_string = target_date_report.strftime("%d %B %Y")
+
+print("MediaReady Stats:", date_string)
+first_row_value="MediaReady Stats:" +  date_string
+ist_tz = pytz.timezone('Asia/Kolkata')
+
+utc_tz = pytz.utc
+
+# Get current datetime in IST
+ist_now = datetime.now(ist_tz)
+
+print('IST NOW:::::::',ist_now)
+
+# Calculate one day ago in IST
+one_day_ago_ist = ist_now - timedelta(days=1)
+
+# Set time to midnight (00:00:00)
+start_ist = one_day_ago_ist.replace(hour=0, minute=0, second=0)
+
+# Set time to 23:59:59
+end_ist = one_day_ago_ist.replace(hour=23, minute=59, second=0)
+
+# Convert IST times to UTC
+start_utc = start_ist.astimezone(utc_tz)
+end_utc = end_ist.astimezone(utc_tz)
+
+# Format UTC times as strings
+start_utc_str = start_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+end_utc_str = end_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+print("Start Time (UTC):", start_utc_str)
+print("End Time (UTC):", end_utc_str)
+
+datetime_obj = datetime.strptime(end_utc_str, "%Y-%m-%dT%H:%M:%SZ")
+
+# Extract and format the date
+date_only = datetime_obj.strftime("%Y-%m-%d")
 
 
 count=0
@@ -51,7 +97,7 @@ count=0
 aws_cloudwatch_cli = aws_mag_con.client('cloudwatch')
 
 namespace_list = []
-csv_ob=open("C:\\Users\91805\insufficient_alarms_inventory.csv","w",newline='')
+csv_ob=open(f"/root/insufficient_alarms_inventory_{date_only}.csv","w",newline='')
 csv_w=csv.writer(csv_ob)
 csv_w.writerow(["S_No","AlarmName","Arn","State","namespace value","Attached Resource","Instance_State"])
 # Describe CloudWatch Alarms with pagination
@@ -307,5 +353,13 @@ for item2 in alarms:
 
 
 csv_ob.close()
+s3_cp_client = aws_mag_con.client(
+    's3'
+    #aws_access_key_id=aws_access_key_id,
+   # aws_secret_access_key=aws_secret_access_key
+)
 
+# Copy file from local directory to S3 bucket
+s3_cp_client.upload_file(f"/root/insufficient_alarms_inventory_{date_only}.csv", 'jenkins-bucket-2024', f"insufficient_alarms_inventory_{date_only}.csv")
+print("file uploaded to the bucket")
 
