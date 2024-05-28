@@ -4,9 +4,7 @@ import re
 
 
 
-aws_access_key_id='AKIA5V2RJ4PK6T3E5YXA'
 
-aws_secret_access_key='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'
 
 instance_dict={}
 instance_dict_name={}
