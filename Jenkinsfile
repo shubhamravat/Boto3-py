@@ -11,8 +11,10 @@ pipeline {
                 
                 // Run the Python script
                 echo 'running py script'               
-                def uploadOutput = sh(returnStdout: true, script: 'sudo python3 insufficient.py')
-                echo "Python script output: ${uploadOutput}"
+                script {
+                    def uploadOutput = sh(returnStdout: true, script: 'sudo python3 insufficient.py')
+                    echo "Python script output: ${uploadOutput}"
+                }
             }
         }
     }
