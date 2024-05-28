@@ -363,3 +363,9 @@ s3_cp_client = aws_mag_con.client(
 s3_cp_client.upload_file(f"/root/insufficient_alarms_inventory_{date_only}.csv", 'jenkins-bucket-2024', f"insufficient_alarms_inventory_{date_only}.csv")
 print("file uploaded to the bucket")
 
+# After the upload_file function call
+upload_output = f"File uploaded to bucket: jenkins-bucket-2024 as insufficient_alarms_inventory_{date_only}.csv"
+
+# Print the output
+print(upload_output)
+
