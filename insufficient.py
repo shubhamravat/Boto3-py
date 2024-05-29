@@ -5,8 +5,17 @@ from botocore.exceptions import ClientError
 from botocore.client import Config
 from datetime import datetime, timedelta
 import pytz
+import os
 
+# Fetch AWS credentials from environment variables
+aws_access_key_id = os.environ.get('AWS_ACCESS_KEY_ID')
+aws_secret_access_key = os.environ.get('AWS_SECRET_ACCESS_KEY')
 
+# Alternatively, use AWS SDK to fetch credentials
+
+aws_mag_con = boto3.session.Session(
+    aws_access_key_id=aws_access_key_id,
+    aws_secret_access_key=aws_secret_access_key , region_name='ap-south-1')
 
 
 
@@ -26,7 +35,6 @@ sqs_name_list=[]
 
 
 # Create a session using the exported credentials
-aws_mag_con = boto3.session.Session(region_name='ap-south-1')
 
 
 aws_cli_ec2=aws_mag_con.client('ec2')
