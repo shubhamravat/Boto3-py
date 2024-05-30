@@ -8,6 +8,7 @@ pipeline {
                 
                 // Use Jenkins credentials to fetch AWS access key ID and secret access key
                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'jenkins-user', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
+                    sh "aws s3 ls" 
                     sh "echo this is ${env.AWS_ACCESS_KEY_ID}"
                     sh "echo this is ${env.AWS_SECRET_ACCESS_KEY}"
                     // Run the Python script
