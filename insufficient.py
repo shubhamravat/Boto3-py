@@ -370,3 +370,30 @@ upload_output = f"File uploaded to bucket: jenkins-bucket-2024 as insufficient_a
 # Print the output
 print(upload_output)
 
+
+
+
+sns_client = aws_mag_con.client('sns',region_name='ap-south-1')
+s3_client = aws_mag_con.client('s3',config=Config(signature_version='s3v4') ,region_name='ap-south-1')
+response = s3_client.generate_presigned_url('get_object',Params={'Bucket': 'jenkins-bucket-2024','Key': f'insufficient_alarms_inventory_{date_only}.csv'},HttpMethod='GET',ExpiresIn=5000)
+print(response)
+presigned_url=response
+
+topic_arn = 'arn:aws:sns:ap-south-1:940231484373:access_key_rotation'
+message = f"Hi please find the downloaded link to the auto generated media ready daily monitoring report placed in S3 bucket jenkins-bucket-2024, click on the link to download the excel file:  {presigned_url}"
+
+response = sns_client.publish(
+    TopicArn=topic_arn,
+     Subject="Media Ready Daily Monitoring Report Download Link",
+    Message=message,
+    MessageAttributes={
+        'email': {
+            'DataType': 'String',
+            'StringValue': 'rawatshubham198@gmail.com'
+        }
+    }
+)
+
+print(message)
+
+print("Message published with message ID:", response['MessageId'])
