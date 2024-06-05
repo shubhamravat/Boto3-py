@@ -194,14 +194,23 @@ for item_kakfka in response_kafka:
 
 
 #####Describe SQS  #########
+if 'QueueUrls' in response_sqs:
+    for item_sqs in response_sqs['QueueUrls']:
+        #print(item)
+        queue_name = item_sqs.split('/')[-1]
+        #print(queue_name)
+        sqs_name_list.append(queue_name)
 
+else:
+    print('SKipping this as no alarms found')
+'''
 response_sqs=aws_cli_sqs.list_queues()
 for item_sqs in response_sqs['QueueUrls']:
     #print(item)
     queue_name = item_sqs.split('/')[-1]
     #print(queue_name)
     sqs_name_list.append(queue_name)
-
+'''
 
 for item2 in alarms:
     if 'Namespace' in item2:
