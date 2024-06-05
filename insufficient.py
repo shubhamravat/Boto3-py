@@ -194,6 +194,7 @@ for item_kakfka in response_kafka:
 
 
 #####Describe SQS  #########
+response_sqs=aws_cli_sqs.list_queues()
 if 'QueueUrls' in response_sqs:
     for item_sqs in response_sqs['QueueUrls']:
         #print(item)
