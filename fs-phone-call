@@ -1,0 +1,367 @@
+import json
+import requests
+from datetime import datetime, timedelta
+import base64
+import time
+import sys
+import boto3
+rule_name = 'FS-PHONE-CALL'
+
+## 3 minutes 25 seconds. attempt to call three number two times each and no one response  to call
+'''
+import boto3
+
+# Create an SNS client
+sns_client = boto3.client('sns')
+
+def lambda_handler(event, context):
+    # Specify the phone number to which you want to send the message
+    phone_number = '+918077959813'
+    
+    # Define the message
+    message = 'Hi'
+    
+    # Send the message via SNS
+    response = sns_client.publish(
+        PhoneNumber=phone_number,
+        Message=message
+    )
+    
+    # Print the response
+    print("Message sent successfully. SNS response:", response)
+    
+    # Return a response
+    return {
+        'statusCode': 200,
+        'body': 'Message sent successfully'
+    }
+
+
+'''
+aws_mag_con=boto3.session.Session()
+sns_client = aws_mag_con.client('sns')
+#ssm_client=aws_mag_con.client('ssm')
+ticket_subjects=[]
+#delay_period = 60  # Delay period in seconds
+freshservice_domain = 'tpmssupport.freshservice.com'
+api_key = 'EqDg1APEqrJBGnMSN5R'
+
+def lambda_handler(event ,  context):
+    #current_timestamp = datetime.utcnow()
+    #print(current_timestamp)
+    #print(type(current_timestamp))
+    #response = ssm_client.get_parameter(Name='call_frequency', WithDecryption=False)
+    #last_call_timestamp = response['Parameter']['Value']
+    #print(type(last_call_timestamp))
+    #print("last call time stamp" ,last_call_timestamp)
+    #last_call_timestamp_conv = datetime.strptime(last_call_timestamp,'%Y-%m-%d %H:%M:%S.%f')
+    #update_last_call_timestamp(last_call_timestamp)
+    
+    # Current timestamp
+    #current_timestamp = datetime.utcnow()
+    #last_call_diff=datetime.strptime(last_call_timestamp, '%Y-%m-%dT%H:%M:%SZ')
+    #print("current time stamp",current_timestamp)
+    #diff=current_timestamp-last_call_timestamp_conv
+    #final_diff=diff.seconds
+    #print("final_diff",final_diff)
+    
+    #if current_timestamp - last_call_timestamp >= delay_period:
+        # Make the call for the current ticket
+        
+        #update_last_call_timestamp(current_timestamp)
+
+    #if final_diff >= delay_period:
+    ticket_count_list=[]
+# Replace these values with your Freshservice domain and API key
+#freshservice_domain = 'tpmssupport.freshservice.com'
+#api_key = 'EqDg1APEqrJBGnMSN5R'
+#time.sleep(10)
+
+    start_time = (datetime.utcnow() - timedelta(minutes=30)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    start_time_query = f"'{start_time}'" # Enclose start_time in double quotes
+#print(start_time_query)
+
+# Replace these values with your Freshservice domain and API key
+
+#api_url = f'https://{freshservice_domain}/api/v2/tickets/filter?query="created_at:>{start_time_query}"'
+
+    api_url = f'https://{freshservice_domain}/api/v2/tickets/filter?query="group_id:27000581031 AND created_at:>{start_time_query}"'
+    auth_string = f'{api_key}:X'  # Note the ':X' appended to the key
+    base64_auth_string = base64.b64encode(auth_string.encode()).decode()
+    
+    
+    # Set up headers including the API key for authentication
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'Basic {base64_auth_string}',
+        
+    }
+    
+    try:
+        response = requests.get(api_url, headers=headers)
+    
+        # Check if the request was successful (HTTP status code 200)
+        if response.status_code == 200:
+            #time.sleep(5)
+            tickets = response.json()
+            #print(tickets)
+            for ticket_subject in tickets['tickets']:
+                #print(ticket_subject['subject'])
+                ticket_subjects.append(ticket_subject['subject'])
+                print("Number of ticket subjects:", len(ticket_subjects))  #### night added
+            message = "Hi, please find all the alert names below -\n\n"
+            for index, ticket_subject in enumerate(ticket_subjects, start=1): #### night added
+                print(f"Ticket subject {index}: {ticket_subject}")              #### night added
+                message += f"{index}. {ticket_subject}\n"                   #### night added
+            print(message)                                          #### night added
+            final_count=tickets['total']    
+ 
+##remove this three dots
+  #          for item in range(0,len(ticket_subjects)):  #### night commented
+   #             message+=f"{item+1}.{ticket_subjects[item]}\n"   #### night commented
+    #        print(message)          #uncomment it   #### night commented
+     #       final_count=tickets['total']    #### night commented
+            #print("TOTAL TICKET COUNT IS",tickets['total'])  #uncomment it    #### night commented
+            # remove this three dots
+            
+
+            print("\n\n")
+            #print(tickets)
+            if final_count >=0:
+                make_call(message)
+                print("returned the function")
+                #update_last_call_timestamp(current_timestamp)
+    
+                
+            else:
+                print("call not intiated alert count is less than mentioned condition")
+    
+            #for item in tickets['tickets']:
+                #print(item['subject'])
+             #   ticket_count_list.append(item['subject'])
+               
+    
+    
+            #for ticket in tickets:
+            #    print(f"Ticket ID: {ticket['id']}, Subject: {ticket['subject']}")
+        else:
+            print(f"Error: {response.status_code}, {response.text}")
+        #print(ticket_count_list)
+        #ticket_count=len(ticket_count_list)
+        #print(f"alert count = {ticket_count}")
+        #if ticket_count>=2:
+        #    make_call()
+            
+    except requests.exceptions.RequestException as e:
+        print(f"Error: {e}")
+        
+#def update_last_call_timestamp(timestamp):
+    # Update the last call timestamp in AWS Systems Manager Parameter Store
+    #ssm_client.put_parameter(Name='call_frequency', Value=str(timestamp), Overwrite=True)
+'''
+def make_call(message):
+    url = "https://api.servetel.in/v1/click_to_call_support"
+    #phone_numbers = ['918077959813', '917906304318', '918057079588']
+    phone_numbers = ['918077959813', '918057079588']
+    max_attempts = 2
+
+    for phone_number in phone_numbers:
+        for attempt_count in range(max_attempts):
+            print(f"Making attempt {attempt_count + 1} for phone number {phone_number}")
+            
+            # Perform other actions (e.g., sending SMS)
+            
+            payload = {
+                "customer_number": phone_number,
+                "api_key": "23afd7fa-252a-44aa-a545-5c10bc331c84"
+            }
+            
+            headers = {
+                "accept": "application/json",
+                "content-type": "application/json"
+            }
+            
+            # Make the HTTP POST request
+            response = requests.post(url, json=payload, headers=headers)
+            print("Response:", response)
+            
+            try:
+                response_value_json = json.loads(response.text)
+                print("Response JSON:", response_value_json)
+            except json.JSONDecodeError:
+                print("Error decoding JSON response or response is empty. Treating as false response.")
+                response_value_json = {}
+            
+            final_response_value = response_value_json.get('success', False)
+            print("Final response value:", final_response_value)
+            
+            # Check termination conditions
+            if final_response_value == 'True' or response.status_code in [504, 503]:
+                print("Phone call successful or retryable error. Exiting the loop.")
+                break  # Exit the loop if call is successful or retryable error
+            else:
+                print(f"Attempt {attempt_count + 1} failed for phone number {phone_number}. Retrying...")
+                time.sleep(5)  # Wait for 5 seconds before retrying
+        else:
+            # This block executes if the inner loop completes without a successful call
+            print(f"All attempts failed for phone number {phone_number}. Moving to the next number.")
+            #break  # Exit the loop for this phone number
+        
+        # This block executes if a successful call is made or a retryable error occurs
+        print("Phone call successful or retryable error. Exiting the loop.")
+        continue  # Move to the next phone number
+
+    print("All attempts completed for all phone numbers. Exiting the code.")
+
+'''
+def make_call(message):
+    #print(event['name'])
+    url = "https://api.servetel.in/v1/click_to_call_support"
+    #phone_number=['918077959813','917906304318','919997035570']
+    phone_dict = {
+    #"Yash": '917905643740',
+    #"Sarthi": '919711309885',
+    "SHUBHAM JIO": '918077959813',
+    "SHUBHAM IDEA": '918057079588',
+    "SHUBHAM JIO THIRD NUMBER":'918077959813'
+    #"MONU":"9528294554"
+    #"Yash": '917905643740',
+    #"Tushar": '917503699633',
+    #"Kishan": '917004642399',
+    #"shivam junior": '916386332814'
+    }
+    flag=0
+    #phone_list_len=len(phone_number)
+    #attempt_count = 1
+    phone_number_iteration=0
+    #for items_call in phone_number:
+        #time.sleep(5)
+    for name, phone_number in phone_dict.items():    
+        for attempt_count in range(1, 3):
+            
+        #attempt_count = 1
+        #phone_number_iteration=1
+        #response_value='True'
+        #while response_value=='True' and attempt_count<=2:
+        #while attempt_count<=2:
+            print("ATTEMPT COUNT IS ",attempt_count)
+            if attempt_count==1:
+                print(f"calling to {name}")
+                
+            elif attempt_count==2:
+                print(f"calling to {name} again")
+            #message = "Hi, please find all the alert names below -\n\n"
+
+            #for item in range(0,len(ticket_subjects)):
+             #   message+=f"{item+1}.{ticket_subjects[item]}\n"
+             #   print(message)
+            
+            #message = f'Hi Please find the alarm names you have received in the last 30 minutes:\n{", ".join(ticket_subjects)}'
+            #message = f'Hi Please find the alarm names you have received in last 30 minutes: {"\n".join(ticket_subjects)}'
+            response_sns = sns_client.publish(
+    PhoneNumber=phone_number,
+    Message=message
+)           
+            #time.sleep(5)
+            #print("THIS IS SNS RESPONSE VALUE ",response_sns)
+            
+            
+            
+            payload = {
+                "customer_number": phone_number,
+                "api_key": "23afd7fa-252a-44aa-a545-5c10bc331c84"
+            }
+            
+            headers = {
+                "accept": "application/json",
+                "content-type": "application/json",
+                 #"Authorization": servetel_api_key
+            }
+            time.sleep(5)
+            response = requests.post(url, json=payload, headers=headers)
+            #print(response)
+            #response_value_json=json.loads(response.text)
+            try:
+                response_value_json = json.loads(response.text)
+                #print(response_value_json)
+            except json.JSONDecodeError:
+                print("Error decoding JSON response or response is empty. Treating as false response.")
+                response_value_json = {}
+            
+            #print(response_value_json)
+            #response_value=response_value_json['success']
+            final_response_value = str(response_value_json.get('success', False))
+            if final_response_value=='False':
+                print(f"final response value is {final_response_value} either phone not picked up or cancelled by user")
+            
+            elif final_response_value=='True':
+                print(f"final response value is {final_response_value} phone picked up exiting the code")#attempt_count += 1  # Increment attempt count
+                #aws_mag_con=boto3.session.Session()
+                client = aws_mag_con.client('scheduler')
+                response = client.update_schedule(Name=rule_name,State='DISABLED',FlexibleTimeWindow={
+                                                'Mode': 'OFF'
+                                                    },
+                ScheduleExpression='cron(0/5 * * * ? *)',
+    
+                Target={'Arn':'arn:aws:lambda:ap-south-1:989033863264:function:FS-ALERT-PHONE-CALL','RoleArn':'arn:aws:iam::989033863264:role/service-role/Amazon_EventBridge_Scheduler_LAMBDA_c2b231c0f3'})
+                print(response)
+            
+        
+            #if final_response_value != 'True' or response.status_code == 504 or response.status_code == 503 or final_response_value is False:
+            if final_response_value == 'False':
+                attempt_count += 1
+                if attempt_count==3:
+                    phone_number_iteration +=1
+                    print(f"Attempt iteration for calling {name}",phone_number_iteration)
+                    if phone_number_iteration == 3:
+                        print("Phone call initiated to all three number hence exiting the code")
+                        sys.exit()
+                    else:
+                        print(f"two times attempted to {name}'s phone number  moving to next number")
+                        break
+                
+                else:
+                    print(f"Retrying {name} phone number - {phone_number}")
+                #break  # Exit th
+                #break
+        
+            else:
+                print("Phone picked up hence. Exiting the code.")    
+                return
+    sys.exit()  # Exit the script
+                #sys.exit()
+
+                #time.sleep(5)
+                    
+            #print(response.text)
+            #if json.loads(response.text) == {'success': True, 'message': 'Originate successfully queued'}:
+            #    print("success")
+            #else:
+            #    print("not success")
+            #    make_call()
+                
+
+    
+
+'''
+
+def lambda_handler(event, context):
+    print(event['name'])
+    url = "https://api.servetel.in/v1/click_to_call_support"
+    payload = {
+        "customer_number": '918077959813',
+        "api_key": "23afd7fa-252a-44aa-a545-5c10bc331c84"
+    }
+    
+    headers = {
+        "accept": "application/json",
+        "content-type": "application/json",
+         #"Authorization": servetel_api_key
+    }
+    response = requests.post(url, json=payload, headers=headers)
+    
+    
+    
+    print(response.text)
+    
+'''
